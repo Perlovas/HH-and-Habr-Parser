@@ -38,7 +38,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Анализатор рынка IT-вакансий (HH/Habr)")
+    parser = argparse.ArgumentParser(description="Анализатор рынка вакансий (HH)")
     parser.add_argument(
         "--keywords",
         nargs="+",

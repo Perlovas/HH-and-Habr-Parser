@@ -16,6 +16,7 @@ from analyzer import (
     skills_frequency,
     skills_salary,
     top_skills_with_salary,
+    companies_salary,  
 )
 from data_processor import DEFAULT_SKILLS, deduplicate, extract_skills, normalize_salaries, save_dataset
 from hh_parser import CaptchaRequired, check_hh_available, fetch_vacancies, resolve_area_id
@@ -82,8 +83,8 @@ TEMPLATE = """
 <body>
 <div class="loader-backdrop" id="loader"><div class="loader"></div></div>
 <main>
-  <h1>Анализатор рынка IT-вакансий</h1>
-  <p class="lead">Быстрый сбор, навыки, зарплаты, города и динамика по HeadHunter</p>
+  <h1>Анализатор рынка вакансий HH.ru</h1>
+  <p class="lead">Сбор, навыки, зарплаты, города и динамика по HeadHunter</p>
 
   <div class="status {{ 'ok' if hh_ok else 'fail' }}">
     <span class="dot"></span>
@@ -110,12 +111,8 @@ TEMPLATE = """
         <input type="number" name="pages" min="1" max="20" value="{{ pages }}" required>
       </div>
       <div>
-        <label>Город/регион (название, не ID)</label>
+        <label>Город/регион</label>
         <input type="text" name="area" value="{{ area }}" placeholder="Москва, Санкт-Петербург, Новосибирск">
-      </div>
-      <div>
-        <label>Опыт (experience)</label>
-        <input type="text" name="experience" value="{{ experience }}" placeholder="between3And6">
       </div>
     </div>
 
@@ -224,7 +221,6 @@ def index():
         "pages": 1,
         "details": False,
         "area": "",
-        "experience": "",
     }
 
     if request.method == "POST":
@@ -232,7 +228,6 @@ def index():
         pages = int(request.form.get("pages", 1))
         details = request.form.get("details") == "on"
         area_input = request.form.get("area") or None
-        experience = request.form.get("experience") or None
 
         keywords = [k.strip() for k in keywords_raw.splitlines() if k.strip()]
 
@@ -251,10 +246,11 @@ def index():
                     per_page=50,
                     fetch_details=True,  # тянем только нужное: key_skills, город, зарплата, название, компания
                     area=area_id,
-                    experience=experience,
+                    experience=None,
                     only_with_salary=True,  # чтобы средняя зарплата не была пустой
                     max_retries=3,
-                    timeout=10,
+                    timeout=7,
+                    max_items=50,  # ограничиваем для скорости UI, если выдачи нет — завершится быстрее
                 )
             except CaptchaRequired as e:
                 flash(f"HH вернул капчу. Откройте и пройдите её: {e.url}")
@@ -301,7 +297,6 @@ def index():
                 "pages": pages,
                 "details": details,
                 "area": area_input or "",
-                "experience": experience or "",
             }
         )
 
