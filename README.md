@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 ## Запуск (CLI)
 ```bash
-python main.py --keywords "Python разработчик" "Data Scientist" --pages 10 --with-salary
+python main.py --keywords "Python разработчик" "Data Scientist" --pages 10
 ```
 Аргументы:
 - `--keywords` (обяз.) — список поисковых фраз.
