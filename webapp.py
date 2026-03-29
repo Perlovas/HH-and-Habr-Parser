@@ -167,7 +167,22 @@ TEMPLATE = """
         </tr>
       {% endfor %}
     </table>
-    <p>Порог по количеству вакансий: 5</p>
+    <p>Порог по количеству вакансий: 3</p>
+  {% endif %}
+
+  {% if companies_rows %}
+    <h3>Топ платёжеспособных компаний</h3>
+    <table border="1" cellpadding="6" cellspacing="0">
+      <tr><th>Компания</th><th>Вакансий</th><th>Средняя (RUB)</th><th>Медиана</th></tr>
+      {% for row in companies_rows %}
+        <tr>
+          <td>{{ row.employer }}</td>
+          <td>{{ row.vacancies }}</td>
+          <td>{{ "%.0f"|format(row.avg_salary) }}</td>
+          <td>{{ "%.0f"|format(row.med_salary) }}</td>
+        </tr>
+      {% endfor %}
+    </table>
   {% endif %}
   {% endif %}
   </main>
@@ -234,12 +249,12 @@ def index():
                     keywords=keywords,
                     pages=pages,
                     per_page=50,
-                    fetch_details=False,  # оставляем быстрый режим, навыки ищем по описанию и предустановленному списку
+                    fetch_details=True,  # тянем только нужное: key_skills, город, зарплата, название, компания
                     area=area_id,
                     experience=experience,
                     only_with_salary=True,  # чтобы средняя зарплата не была пустой
-                    max_retries=2,
-                    timeout=5,
+                    max_retries=3,
+                    timeout=10,
                 )
             except CaptchaRequired as e:
                 flash(f"HH вернул капчу. Откройте и пройдите её: {e.url}")
@@ -260,6 +275,7 @@ def index():
                 skills_series = top_skills(df)
                 skills_full = top_skills_with_salary(df, top_n=15)
                 skills_by_salary = skills_salary(df)
+                companies = companies_salary(df)
                 cities_series = top_cities(df)
                 timeline_series = publications_over_time(df)
                 salary_count = df["mid_salary"].notna().sum()
@@ -310,6 +326,13 @@ def index():
         .reset_index()
         .to_dict("records")
         if "skills_by_salary" in locals()
+        else [],
+        companies_rows=locals()
+        .get("companies", pd.DataFrame())
+        .head(10)
+        .reset_index()
+        .to_dict("records")
+        if "companies" in locals()
         else [],
         **defaults,
     )

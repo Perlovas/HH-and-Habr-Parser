@@ -155,9 +155,13 @@ class HHParser:
         if not self.fetch_details:
             return {}
         url = f"{API_URL}/{vacancy_id}"
-        data = self._request(url)
-        time.sleep(self.delay)
-        return {"key_skills": data.get("key_skills", [])}
+        try:
+            data = self._request(url)
+            time.sleep(self.delay)
+            return {"key_skills": data.get("key_skills", [])}
+        except Exception as exc:
+            logging.warning("Detail fetch failed for %s: %s", vacancy_id, exc)
+            return {}
 
     def fetch(
         self,

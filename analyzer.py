@@ -1,4 +1,4 @@
-"""Аналитические функции для расчёта агрегатов под визуализацию."""
+"""Аналитические функции для агрегирования вакансий."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def top_skills_with_salary(df: pd.DataFrame, top_n: int = 10):
     return merged
 
 
-def skills_salary(df: pd.DataFrame, min_count: int = 5):
+def skills_salary(df: pd.DataFrame, min_count: int = 3):
     """Средняя зарплата по навыкам (RUB) с порогом по количеству вхождений."""
 
     exploded = df.explode("skills")
@@ -57,7 +57,19 @@ def skills_salary(df: pd.DataFrame, min_count: int = 5):
     )
     stats["ci95_low"] = stats["avg_salary"] - 1.96 * (stats["std_salary"] / (stats["freq"] ** 0.5))
     stats["ci95_high"] = stats["avg_salary"] + 1.96 * (stats["std_salary"] / (stats["freq"] ** 0.5))
-    return stats[stats["freq"] >= min_count].sort_values("avg_salary", ascending=False)
+    return stats[stats["freq"] >= min_count].sort_values("med_salary", ascending=False)
+
+
+def companies_salary(df: pd.DataFrame, min_count: int = 1):
+    """Топ компаний по средней зарплате (учитываются все вакансии с указанной зарплатой)."""
+
+    subset = df[df["mid_salary"].notna() & df["employer"].notna()]
+    grp = subset.groupby("employer")["mid_salary"]
+    stats = grp.agg(["count", "mean", "median"]).rename(
+        columns={"count": "vacancies", "mean": "avg_salary", "median": "med_salary"}
+    )
+    stats = stats[stats["vacancies"] >= min_count].sort_values("avg_salary", ascending=False)
+    return stats
 
 
 def top_cities(df: pd.DataFrame, top_n: int = 10):
@@ -77,4 +89,5 @@ __all__ = [
     "skills_frequency",
     "skills_salary",
     "top_skills_with_salary",
+    "companies_salary",
 ]
